@@ -96,7 +96,7 @@ namespace ParseTimetableFromExcel
             Thread t = new Thread(new ThreadStart(importFromMsExcelThreadProc));
             
             progressForm = new ProgressForm();
-            progressForm.ShowDialog(this);          
+            progressForm.Show();          
             
             t.Start();
         }
@@ -240,7 +240,7 @@ namespace ParseTimetableFromExcel
                         continue;
                 }
 
-                int day=1; // Week starts from 1 -- Monday                                
+                int day=0; // Week days start from 1 -- Monday                                
                 
                 int i = lessonsBeginRowIndex;
 
@@ -298,9 +298,10 @@ namespace ParseTimetableFromExcel
                                 lessons.Add(lesson);
                             }
                         }
-                        progressForm.currentNumberOfIterationsPass += numberOfRecordsPerLesson;
-                    }                    
-                    
+                        
+                    }
+                    progressForm.currentNumberOfIterationsPass += numberOfRecordsPerLesson;
+
                 }
             }
 
@@ -607,7 +608,7 @@ namespace ParseTimetableFromExcel
                     }
                     catch (Exception e) 
                     {
-                        CentralExceptionProcessor.process(e);
+                        //CentralExceptionProcessor.process(e);
                     }
                 }
 
@@ -623,16 +624,23 @@ namespace ParseTimetableFromExcel
                 currentNumberOfIterationsPass = 0,
                 totalNumberOfIterations = lessons.Count
             };
-            progressForm.ShowDialog(this);
+            progressForm.Show();
 
             t.Start();            
         }
 
         private void exportToMysqlDbProc()
         {
-            LessonTable.setUp();
-            LessonTable.addLessons(lessons, progressForm);
-            progressForm.HideProgressForm(exportFinished);
+            try
+            {
+                LessonTable.setUp();
+                LessonTable.addLessons(lessons, progressForm);
+                progressForm.HideProgressForm(exportFinished);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+            }
         }
 
         private void exportFinished()
@@ -695,6 +703,7 @@ namespace ParseTimetableFromExcel
 
         public static void setUp()
         {
+            Connection.Close();
             Connection.Open();
             MySqlCommand c;
             try

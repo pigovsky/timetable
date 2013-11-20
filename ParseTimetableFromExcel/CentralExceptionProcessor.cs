@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,9 +10,10 @@ namespace ParseTimetableFromExcel
 {
     class CentralExceptionProcessor
     {
+        private static StreamWriter log = File.CreateText("Errors.log");
         public static void process(object e)
         {
-            MessageBox.Show(e.ToString());
+            log.WriteLine(e.ToString());
         }
     }
 }

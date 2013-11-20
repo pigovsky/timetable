@@ -42,9 +42,19 @@ namespace ParseTimetableFromExcel
             if (importProgressBar.InvokeRequired)
                 Invoke(new UpdateProgressCallback(UpdateProgress));
             else
-                importProgressBar.Value = (int)
-                    (currentNumberOfIterationsPass*100/
-                    totalNumberOfIterations);
+            {
+                int val = 0;
+
+                if (totalNumberOfIterations > 0)
+                {
+                    val = (int)
+                        (currentNumberOfIterationsPass * 100 /
+                        totalNumberOfIterations);
+                    val = val > 100 ? 100 : val;
+                }
+
+                importProgressBar.Value = val;
+            }
         }
 
         delegate void HideImportProgressFormCallback(ThreadStart fun);
@@ -57,7 +67,8 @@ namespace ParseTimetableFromExcel
             if (this.InvokeRequired)
             {
                 this.Invoke(new
-                    HideImportProgressFormCallback(HideProgressForm));
+                    HideImportProgressFormCallback(HideProgressForm),
+                    new object[] {fun});
             }
             else
             {
