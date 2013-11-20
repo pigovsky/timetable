@@ -725,7 +725,7 @@ namespace ParseTimetableFromExcel
                 "st_group varchar(45) NOT NULL," +
                 "week varchar(45) NOT NULL," +
                 "day int(1) NOT NULL," +
-                "lesson_time varchar(45) NOT NULL," +
+                "lesson_time time NOT NULL," +
                 "teacher varchar(45)," +
                 
                 "subject varchar(45)," +
