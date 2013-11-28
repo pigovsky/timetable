@@ -265,9 +265,14 @@ namespace ParseTimetableFromExcel
                    
                     foreach (string week in new string[] {"Odd","Even"})
                     {
-                        string subject = emptyForNull (GetValueFromMergedCell(i++, j));                        
-                        string teacher = emptyForNull( valueArray[i++, j]);
-                        string room = emptyForNull( valueArray[i++, j]);
+                        // subjects, teachers and rooms can be in merged cells for 
+                        // several groups simultaneously.
+                        
+                        string subject = Regex.Replace(
+                                GetValueFromMergedCell(i++, j).ToLower(), 
+                                @"\s+", "");
+                        string teacher = GetValueFromMergedCell(i++, j);
+                        string room    = GetValueFromMergedCell(i++, j);
 
                         if (!string.IsNullOrWhiteSpace(subject))
                         {
@@ -280,6 +285,12 @@ namespace ParseTimetableFromExcel
 
                             // Розділяємо список аудиторій по пробілах, ігноруючи букви
                             var rooms = getRoomsArray(room);
+
+                            // If we have no room for a lesson then 
+                            // use '?' character as a room title
+                            if (rooms == null || rooms.Length < 1)
+                                rooms = new string[] { "?" };
+
                             var teachers = extractTeacherList(teacher);
 
                             for (int k = 0; k < rooms.Length; k++)
@@ -405,7 +416,9 @@ namespace ParseTimetableFromExcel
                 // то це викл., доц., проф. чи ст. викл.
                 if (Char.IsLower(token[0]) && token.Length > 1)
                 {
-                    first += token + ". ";
+                    // Commenting the following statement out we
+                    // get rid of "doc.", "wykl." and "prof."
+                    //first += token + ". ";
                 }
                 else
                     break;
@@ -563,7 +576,7 @@ namespace ParseTimetableFromExcel
                 val = ((Range)excelRange[mergeArea.Row, mergeArea.Column]).Text;
                 valueArray[i, j] = val;
             }
-            val = Regex.Replace(val.ToString().ToLower(), @"\s+", "");
+            
             return val.ToString().Trim();
         }
 
