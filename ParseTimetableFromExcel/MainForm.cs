@@ -235,12 +235,12 @@ namespace ParseTimetableFromExcel
                     continue;
                 else
                 {
-                    groupTitle = groupTitleObj.ToString().Trim();
+                    groupTitle = removeAllSpaces( groupTitleObj.ToString());
                     if ("".Equals(groupTitle))
                         continue;
                 }
 
-                int day=0; // Week days start from 1 -- Monday                                
+                string day=""; // Week days start from 1 -- Monday                                
                 
                 int i = lessonsBeginRowIndex;
 
@@ -256,21 +256,20 @@ namespace ParseTimetableFromExcel
                             continue;
                         }
                         else
-                            day++; // Parse next day of week
+                            day=dayString.Replace('"','\''); // П"ятниця -> П'ятниця
                     }
                                                           
                     
                     object time = excelRange[i, 2];                                       
                     
                    
-                    foreach (string week in new string[] {"Odd","Even"})
+                    foreach (string week in new string[] {"O","E"})
                     {
                         // subjects, teachers and rooms can be in merged cells for 
                         // several groups simultaneously.
                         
-                        string subject = Regex.Replace(
-                                GetValueFromMergedCell(i++, j).ToLower(), 
-                                @"\s+", "");
+                        string subject = removeAllSpaces(
+                                GetValueFromMergedCell(i++, j).ToLower());
                         string teacher = GetValueFromMergedCell(i++, j);
                         string room    = GetValueFromMergedCell(i++, j);
 
@@ -283,6 +282,9 @@ namespace ParseTimetableFromExcel
                                 room = timeRoomTuple.Item2;
                             }
 
+                            // Для тимчасового розкладу:
+                            var dates = getDatesArray(day);
+
                             // Розділяємо список аудиторій по пробілах, ігноруючи букви
                             var rooms = getRoomsArray(room);
 
@@ -293,21 +295,22 @@ namespace ParseTimetableFromExcel
 
                             var teachers = extractTeacherList(teacher);
 
-                            for (int k = 0; k < rooms.Length; k++)
-                            {
-                                var lesson = new Lesson()
-                                {
-                                    day = day,
-                                    group = emptyForNull(groupTitle),
-                                    room = rooms[k],
-                                    subject = subject,
-                                    teacher = k>=teachers.Count?"":teachers[k],
-                                    time = emptyForNull(time),
-                                    week = week
-                                };
 
-                                lessons.Add(lesson);
-                            }
+                            foreach (var date in dates)
+                                for (int k = 0; k < rooms.Length; k++)
+                                {
+                                    var lesson = new Lesson()
+                                    {                                        
+                                        group = emptyForNull(groupTitle),
+                                        room = rooms[k],
+                                        subject = subject,
+                                        teacher = k>=teachers.Count?"":teachers[k],
+                                        time = date.ToString("yyyy-MM-dd") + " " + removeAllSpaces(emptyForNull(time)),
+                                        week = week
+                                    };
+
+                                    lessons.Add(lesson);
+                                }
                         }
                         
                     }
@@ -326,6 +329,11 @@ namespace ParseTimetableFromExcel
                 AddRowToWorkbookSheetRawData(GetRow(valueArray, i));
         }
 
+        private string removeAllSpaces(string p)
+        {
+            return Regex.Replace(p, @"\s+", "");
+        }
+
         private static string[] getRoomsArray(string text)
         {
             List<string> rooms = new List<string>();            
@@ -338,9 +346,21 @@ namespace ParseTimetableFromExcel
             return rooms.ToArray<string>();
         }
 
+        private static List<DateTime> getDatesArray(string text)
+        {
+            List<DateTime> dates = new List<DateTime>();
+
+            foreach (Match m in Regex.Matches(text, @"(\d+\.\d+\.\d\d+)"))
+            {
+                dates.Add(DateTime.Parse(m.Value));
+            }
+
+            return dates;
+        }
+
         private static Tuple<string,string> getTimeFromRoomRecord(string room)
-        {           
-            string pat = @"(\d+)\s*[:\.]\s*(\d+)";
+        {
+            string pat = @"(\d+)\s*[:\.]\s*(\d\d+)";
 
             // Instantiate the regular expression object.
             Regex r = new Regex(pat, RegexOptions.IgnoreCase);
@@ -666,7 +686,7 @@ namespace ParseTimetableFromExcel
     {
         public string group { get; set; }
         public string week { get; set; } // Week can be odd or even
-        public int day { get; set; }
+        //public string day { get; set; }
 
         
         public string time
@@ -676,9 +696,9 @@ namespace ParseTimetableFromExcel
                 return _time;
             }
             set 
-            {    // У записі про час замінюємо крапку на двокрапку і забираємо всі пробіли          
+            {    // У записі про час замінюємо крапку на двокрапку 
                 _time =
-                    Regex.Replace(value.Replace('.', ':'),@"\s+","");            
+                    value.Replace('.', ':');            
             } 
         
         }
@@ -734,19 +754,19 @@ namespace ParseTimetableFromExcel
             c = new MySqlCommand("DROP TABLE IF EXISTS " + table,Connection);
             c.ExecuteNonQuery();
             c = new MySqlCommand("CREATE TABLE  " + table +
-                " (id int(10) unsigned NOT NULL AUTO_INCREMENT," +
+                " (id int(10) NOT NULL AUTO_INCREMENT," +
                 "st_group varchar(45) NOT NULL," +
-                "week varchar(45) NOT NULL," +
-                "day int(1) NOT NULL," +
-                "lesson_time time NOT NULL," +
+                "week char(1) NOT NULL," +
+               
+                "lesson_time datetime NOT NULL," +
                 "teacher varchar(45)," +
                 
                 "subject varchar(45)," +
                 
                 "room varchar(45)," +
                 
-                "PRIMARY KEY (id))"+
-            " default charset=cp1251", Connection);
+                "PRIMARY KEY (id)) "+
+                "DEFAULT CHARSET=utf8", Connection);
             c.ExecuteNonQuery();
             Connection.Close();
         }
@@ -768,7 +788,7 @@ namespace ParseTimetableFromExcel
             var c = new MySqlCommand("insert into " + table +
                 " (st_group," +
                 "week," +
-                "day," +
+                //"day," +
                 "lesson_time," +
                 "teacher," +
                 
@@ -777,7 +797,7 @@ namespace ParseTimetableFromExcel
                 "room)" +
                 " values (@group," +
                 "@week," +
-                "@day," +
+                //"@day," +
                 "@time," +
                 "@teacher," +
                 
@@ -787,7 +807,7 @@ namespace ParseTimetableFromExcel
                 "@room)", Connection);
             c.Parameters.AddWithValue("@group", lesson.group);
             c.Parameters.AddWithValue("@week", lesson.week);
-            c.Parameters.AddWithValue("@day",  lesson.day);
+            //c.Parameters.AddWithValue("@day",  lesson.day);
             c.Parameters.AddWithValue("@time",  lesson.time);
             c.Parameters.AddWithValue("@teacher", lesson.teacher);
             
