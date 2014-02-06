@@ -263,7 +263,7 @@ namespace ParseTimetableFromExcel
                     object time = excelRange[i, 2];                                       
                     
                    
-                    foreach (string week in new string[] {"O","E"})
+                    //foreach (string week in new string[] {"O","E"})
                     {
                         // subjects, teachers and rooms can be in merged cells for 
                         // several groups simultaneously.
@@ -306,7 +306,7 @@ namespace ParseTimetableFromExcel
                                         subject = subject,
                                         teacher = k>=teachers.Count?"":teachers[k],
                                         time = date.ToString("yyyy-MM-dd") + " " + removeAllSpaces(emptyForNull(time)),
-                                        week = week
+                                        //week = week
                                     };
 
                                     lessons.Add(lesson);
@@ -756,7 +756,7 @@ namespace ParseTimetableFromExcel
             c = new MySqlCommand("CREATE TABLE  " + table +
                 " (id int(10) NOT NULL AUTO_INCREMENT," +
                 "st_group varchar(45) NOT NULL," +
-                "week char(1) NOT NULL," +
+                //"week char(1) NOT NULL," +
                
                 "lesson_time datetime NOT NULL," +
                 "teacher varchar(45)," +
@@ -787,7 +787,7 @@ namespace ParseTimetableFromExcel
         {                       
             var c = new MySqlCommand("insert into " + table +
                 " (st_group," +
-                "week," +
+                //"week," +
                 //"day," +
                 "lesson_time," +
                 "teacher," +
@@ -796,7 +796,7 @@ namespace ParseTimetableFromExcel
                                 
                 "room)" +
                 " values (@group," +
-                "@week," +
+                //"@week," +
                 //"@day," +
                 "@time," +
                 "@teacher," +
@@ -806,7 +806,7 @@ namespace ParseTimetableFromExcel
                 
                 "@room)", Connection);
             c.Parameters.AddWithValue("@group", lesson.group);
-            c.Parameters.AddWithValue("@week", lesson.week);
+            //c.Parameters.AddWithValue("@week", lesson.week);
             //c.Parameters.AddWithValue("@day",  lesson.day);
             c.Parameters.AddWithValue("@time",  lesson.time);
             c.Parameters.AddWithValue("@teacher", lesson.teacher);
