@@ -1,7 +1,7 @@
 ﻿/*
  * Програма для розбору екселівських файлів з розкладами ТНЕУ.
  * 2013 (c) Піговський Ю.Р. 
- * Програма поширюється на основі ліцензії GNU.
+ * Програма поширюється на основі ліцензії GPL.
  * 
  */
 
@@ -227,18 +227,12 @@ namespace ParseTimetableFromExcel
 
             int lessonsBeginRowIndex = groupRowIndex + 1;
 
+            int timeColIndex = groupColIndex;
+
             for (int j = groupColIndex; j <= valueArray.GetLength(1); j++)
             {
-                string groupTitle = "";
-                object groupTitleObj = valueArray[groupRowIndex, j];
-                if (groupTitleObj == null)
-                    continue;
-                else
-                {
-                    groupTitle = removeAllSpaces( groupTitleObj.ToString());
-                    if ("".Equals(groupTitle))
-                        continue;
-                }
+                string groupTitle = removeAllSpaces(
+                    GetValueFromMergedCell(groupRowIndex, j));                                                
 
                 string day=""; // Week days start from 1 -- Monday                                
                 
@@ -258,20 +252,34 @@ namespace ParseTimetableFromExcel
                         else
                             day=dayString.Replace('"','\''); // П"ятниця -> П'ятниця
                     }
-                                                          
-                    
-                    object time = excelRange[i, 2];                                       
+
+
+                    string time = GetValueFromMergedCell(i, timeColIndex);                                       
                     
                    
                     //foreach (string week in new string[] {"O","E"})
                     {
                         // subjects, teachers and rooms can be in merged cells for 
                         // several groups simultaneously.
+
                         
+
                         string subject = removeAllSpaces(
                                 GetValueFromMergedCell(i++, j).ToLower());
+                        Tuple<string, string> timeFromLeftColumn = getTimeFromRoomRecord(subject);
+                        if (timeFromLeftColumn != null)
+                        {
+                            if (string.IsNullOrWhiteSpace(timeFromLeftColumn.Item2))
+                                timeColIndex = j;
+                            break;
+                        }
+                        if (string.IsNullOrWhiteSpace(groupTitle))
+                            break;
+
                         string teacher = GetValueFromMergedCell(i++, j);
                         string room    = GetValueFromMergedCell(i++, j);
+
+                        
 
                         if (!string.IsNullOrWhiteSpace(subject))
                         {
@@ -305,7 +313,7 @@ namespace ParseTimetableFromExcel
                                         room = rooms[k],
                                         subject = subject,
                                         teacher = k>=teachers.Count?"":teachers[k],
-                                        time = date.ToString("yyyy-MM-dd") + " " + removeAllSpaces(emptyForNull(time)),
+                                        time = date.ToString("yyyy-MM-dd") + " " + removeAllSpaces(time),
                                         //week = week
                                     };
 
@@ -459,7 +467,9 @@ namespace ParseTimetableFromExcel
                     first += Char.ToUpper(token[0])+token.Substring(1)+" ";
                     surnameFound = true;
                 }
-                else
+                // Якщо токен з однієї літери і слідує після прізвища,
+                // то це ініціал, інакше -- катзнащо
+                else if (surnameFound && token.Length == 1)
                 {
                     first+=token.ToUpper()+".";
                 }
@@ -685,7 +695,7 @@ namespace ParseTimetableFromExcel
     class Lesson
     {
         public string group { get; set; }
-        public string week { get; set; } // Week can be odd or even
+        //public string week { get; set; } // Week can be odd or even
         //public string day { get; set; }
 
         
