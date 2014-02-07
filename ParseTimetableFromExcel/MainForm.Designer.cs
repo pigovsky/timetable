@@ -35,6 +35,7 @@
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.importFromAnExcelFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exportToMysqlDatabaseToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.importFromTNEUSiteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.workbookSheetRawDataGrid)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer)).BeginInit();
@@ -93,7 +94,8 @@
             // 
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.importFromAnExcelFileToolStripMenuItem,
-            this.exportToMysqlDatabaseToolStripMenuItem});
+            this.exportToMysqlDatabaseToolStripMenuItem,
+            this.importFromTNEUSiteToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
             this.fileToolStripMenuItem.Text = "File";
@@ -111,6 +113,13 @@
             this.exportToMysqlDatabaseToolStripMenuItem.Size = new System.Drawing.Size(212, 22);
             this.exportToMysqlDatabaseToolStripMenuItem.Text = "Export to mysql database";
             this.exportToMysqlDatabaseToolStripMenuItem.Click += new System.EventHandler(this.exportToMysqlDatabaseToolStripMenuItem_Click);
+            // 
+            // importFromTNEUSiteToolStripMenuItem
+            // 
+            this.importFromTNEUSiteToolStripMenuItem.Name = "importFromTNEUSiteToolStripMenuItem";
+            this.importFromTNEUSiteToolStripMenuItem.Size = new System.Drawing.Size(212, 22);
+            this.importFromTNEUSiteToolStripMenuItem.Text = "Import from TNEU site";
+            this.importFromTNEUSiteToolStripMenuItem.Click += new System.EventHandler(this.importFromTNEUSiteToolStripMenuItem_Click);
             // 
             // MainForm
             // 
@@ -144,6 +153,7 @@
         private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem importFromAnExcelFileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem exportToMysqlDatabaseToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem importFromTNEUSiteToolStripMenuItem;
     }
 }
 

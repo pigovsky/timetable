@@ -690,6 +690,12 @@ namespace ParseTimetableFromExcel
         {
             MessageBox.Show(this, "Export is finished successfully");
         }
+
+        private void importFromTNEUSiteToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            LoadTimetableFromTNEU ltft = new LoadTimetableFromTNEU();
+            ltft.ShowDialog();
+        }
     }
 
     class Lesson
