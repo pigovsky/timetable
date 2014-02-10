@@ -45,9 +45,16 @@ namespace ParseTimetableFromExcel
                 Directory.CreateDirectory(zipDir);
 
             WebClient webClient = new WebClient();
+            // Thank Some1Pr0 for following headers
+            webClient.Headers.Add(HttpRequestHeader.AcceptEncoding, "gzip,deflate,sdch");
+            webClient.Headers.Add(HttpRequestHeader.Referer, "http://www.tneu.edu.ua/study/timetable/");
+            webClient.DownloadFile("http://www.tneu.edu.ua/engine/download.php?id=" + name, 
+                zipDir + title + ".zip");
+
+            /*WebClient webClient = new WebClient();
             //webClient.QueryString.Add("id", name);
             webClient.DownloadFile(
-                "http://www.tneu.edu.ua/engine/download.php?id=939", zipDir + title + ".htm");
+                "http://www.tneu.edu.ua/engine/download.php?id=939", ".htm");*/
             webClient.Dispose();
             
         }

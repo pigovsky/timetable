@@ -29,6 +29,20 @@ namespace ParseTimetableFromExcel
         }
         public long totalNumberOfIterations { get; set; }
 
+        private int _currentNumberOfFilesPass;
+        public int CurrentNumberOfFilesPass
+        {
+            get
+            {
+                return _currentNumberOfFilesPass;
+            }
+            set
+            {
+                _currentNumberOfFilesPass = value;
+                UpdateProgress();
+            }
+        }
+        public int totalNumberOfFiles { get; set; }
 
         public ProgressForm()
         {
@@ -54,6 +68,13 @@ namespace ParseTimetableFromExcel
                 }
 
                 importProgressBar.Value = val;
+                if (totalNumberOfFiles > 0)
+                {
+                    val = CurrentNumberOfFilesPass * 100 /
+                        totalNumberOfFiles;
+                    val = val > 100 ? 100 : val;
+                }
+                totalProgressBar.Value = val;
             }
         }
 

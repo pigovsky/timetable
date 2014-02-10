@@ -94,8 +94,8 @@
             // 
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.importFromAnExcelFileToolStripMenuItem,
-            this.exportToMysqlDatabaseToolStripMenuItem,
-            this.importFromTNEUSiteToolStripMenuItem});
+            this.importFromTNEUSiteToolStripMenuItem,
+            this.exportToMysqlDatabaseToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
             this.fileToolStripMenuItem.Text = "File";
@@ -103,21 +103,21 @@
             // importFromAnExcelFileToolStripMenuItem
             // 
             this.importFromAnExcelFileToolStripMenuItem.Name = "importFromAnExcelFileToolStripMenuItem";
-            this.importFromAnExcelFileToolStripMenuItem.Size = new System.Drawing.Size(212, 22);
-            this.importFromAnExcelFileToolStripMenuItem.Text = "Import from an excel file...";
+            this.importFromAnExcelFileToolStripMenuItem.Size = new System.Drawing.Size(206, 22);
+            this.importFromAnExcelFileToolStripMenuItem.Text = "Import from excel files...";
             this.importFromAnExcelFileToolStripMenuItem.Click += new System.EventHandler(this.importFromMsExcel);
             // 
             // exportToMysqlDatabaseToolStripMenuItem
             // 
             this.exportToMysqlDatabaseToolStripMenuItem.Name = "exportToMysqlDatabaseToolStripMenuItem";
-            this.exportToMysqlDatabaseToolStripMenuItem.Size = new System.Drawing.Size(212, 22);
+            this.exportToMysqlDatabaseToolStripMenuItem.Size = new System.Drawing.Size(206, 22);
             this.exportToMysqlDatabaseToolStripMenuItem.Text = "Export to mysql database";
             this.exportToMysqlDatabaseToolStripMenuItem.Click += new System.EventHandler(this.exportToMysqlDatabaseToolStripMenuItem_Click);
             // 
             // importFromTNEUSiteToolStripMenuItem
             // 
             this.importFromTNEUSiteToolStripMenuItem.Name = "importFromTNEUSiteToolStripMenuItem";
-            this.importFromTNEUSiteToolStripMenuItem.Size = new System.Drawing.Size(212, 22);
+            this.importFromTNEUSiteToolStripMenuItem.Size = new System.Drawing.Size(206, 22);
             this.importFromTNEUSiteToolStripMenuItem.Text = "Import from TNEU site";
             this.importFromTNEUSiteToolStripMenuItem.Click += new System.EventHandler(this.importFromTNEUSiteToolStripMenuItem_Click);
             // 

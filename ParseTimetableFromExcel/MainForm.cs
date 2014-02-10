@@ -73,7 +73,7 @@ namespace ParseTimetableFromExcel
         
 
         Workbook wb;
-        string fileNameForImport;
+        string[] fileNamesForImport;
 
 
         private void importFromMsExcel(object sender, EventArgs e)
@@ -83,14 +83,15 @@ namespace ParseTimetableFromExcel
             /*for (int j = 1; j <= valueArray.GetLength(1); j++)
                 dataGridView1.Columns.Add("c" + j, "v" + j);*/
 
-            
-            FileDialog fd = new OpenFileDialog();
+
+            OpenFileDialog fd = new OpenFileDialog();
             fd.FileName = "*.xls";
+            fd.Multiselect = true;
 
             if (fd.ShowDialog() != DialogResult.OK)
                 return;
 
-            fileNameForImport = fd.FileName;
+            fileNamesForImport = fd.FileNames;
             
 
             Thread t = new Thread(new ThreadStart(importFromMsExcelThreadProc));
@@ -111,36 +112,42 @@ namespace ParseTimetableFromExcel
             Microsoft.Office.Interop.Excel.Application app 
                 = new Microsoft.Office.Interop.Excel.Application();
 
-            
-
-            wb = app.Workbooks.Open(fileNameForImport, Type.Missing, Type.Missing, Type.Missing, Type.Missing,
-                Type.Missing, Type.Missing, Type.Missing, Type.Missing,
-                Type.Missing, Type.Missing, Type.Missing, Type.Missing,
-                Type.Missing, Type.Missing);
-
             workbookSheetRawDataGrid.Rows.Clear();
             workbookSheetRawDataGrid.Columns.Clear();
             workbookSheetRawDataGrid.Rows.Clear();
 
-
-            int numSheets = wb.Sheets.Count;
-            _cumSumOfIterationsPerSheet = new long[numSheets];
-
-            progressForm.totalNumberOfIterations = 0;
-            for (int sheetNum = 1; sheetNum <= numSheets; sheetNum++)
+            progressForm.totalNumberOfFiles = fileNamesForImport.Length;
+            progressForm.CurrentNumberOfFilesPass = 0;
+            foreach (var fileNameForImport in fileNamesForImport)
             {
-                Worksheet sheet = (Worksheet)wb.Sheets[sheetNum];
-                excelRange = sheet.UsedRange;
-                progressForm.totalNumberOfIterations +=
-                    excelRange.Rows.Count * excelRange.Columns.Count;
-                _cumSumOfIterationsPerSheet[sheetNum - 1] = 
-                    progressForm.totalNumberOfIterations;
+
+                wb = app.Workbooks.Open(fileNameForImport, Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+                    Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+                    Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+                    Type.Missing, Type.Missing);
+
+                int numSheets = wb.Sheets.Count;
+                _cumSumOfIterationsPerSheet = new long[numSheets];
+
+                progressForm.totalNumberOfIterations = 0;
+                for (int sheetNum = 1; sheetNum <= numSheets; sheetNum++)
+                {
+                    Worksheet sheet = (Worksheet)wb.Sheets[sheetNum];
+                    excelRange = sheet.UsedRange;
+                    progressForm.totalNumberOfIterations +=
+                        excelRange.Rows.Count * excelRange.Columns.Count;
+                    _cumSumOfIterationsPerSheet[sheetNum - 1] =
+                        progressForm.totalNumberOfIterations;
+                }
+
+                ExcelScanIntenal(wb);
+
+                wb.Close(false, fileNamesForImport, null);
+                Marshal.ReleaseComObject(wb);
+
+                progressForm.CurrentNumberOfFilesPass++;
             }
 
-            ExcelScanIntenal(wb);
-
-            wb.Close(false, fileNameForImport, null);
-            Marshal.ReleaseComObject(wb);
 
             app.Quit();
             log.Close();

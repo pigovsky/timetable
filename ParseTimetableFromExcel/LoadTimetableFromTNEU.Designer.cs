@@ -52,7 +52,7 @@
             this.listBoxTimetableFiles.FormattingEnabled = true;
             this.listBoxTimetableFiles.Location = new System.Drawing.Point(12, 12);
             this.listBoxTimetableFiles.Name = "listBoxTimetableFiles";
-            this.listBoxTimetableFiles.SelectionMode = System.Windows.Forms.SelectionMode.MultiSimple;
+            this.listBoxTimetableFiles.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
             this.listBoxTimetableFiles.Size = new System.Drawing.Size(435, 277);
             this.listBoxTimetableFiles.TabIndex = 1;
             // 
