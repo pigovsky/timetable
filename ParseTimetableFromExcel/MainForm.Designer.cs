@@ -34,6 +34,9 @@
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.importFromAnExcelFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.importFromTNEUSiteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.exportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.exportToCouchDBToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exportToMysqlDatabaseToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.workbookSheetRawDataGrid)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView2)).BeginInit();
@@ -93,7 +96,8 @@
             // 
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.importFromAnExcelFileToolStripMenuItem,
-            this.exportToMysqlDatabaseToolStripMenuItem});
+            this.importFromTNEUSiteToolStripMenuItem,
+            this.exportToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
             this.fileToolStripMenuItem.Text = "File";
@@ -101,16 +105,39 @@
             // importFromAnExcelFileToolStripMenuItem
             // 
             this.importFromAnExcelFileToolStripMenuItem.Name = "importFromAnExcelFileToolStripMenuItem";
-            this.importFromAnExcelFileToolStripMenuItem.Size = new System.Drawing.Size(212, 22);
-            this.importFromAnExcelFileToolStripMenuItem.Text = "Import from an excel file...";
+            this.importFromAnExcelFileToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
+            this.importFromAnExcelFileToolStripMenuItem.Text = "Import from excel files...";
             this.importFromAnExcelFileToolStripMenuItem.Click += new System.EventHandler(this.importFromMsExcel);
+            // 
+            // importFromTNEUSiteToolStripMenuItem
+            // 
+            this.importFromTNEUSiteToolStripMenuItem.Name = "importFromTNEUSiteToolStripMenuItem";
+            this.importFromTNEUSiteToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
+            this.importFromTNEUSiteToolStripMenuItem.Text = "Import from TNEU site";
+            this.importFromTNEUSiteToolStripMenuItem.Click += new System.EventHandler(this.importFromTNEUSiteToolStripMenuItem_Click);
+            // 
+            // exportToolStripMenuItem
+            // 
+            this.exportToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.exportToCouchDBToolStripMenuItem,
+            this.exportToMysqlDatabaseToolStripMenuItem});
+            this.exportToolStripMenuItem.Name = "exportToolStripMenuItem";
+            this.exportToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
+            this.exportToolStripMenuItem.Text = "Export";
+            // 
+            // exportToCouchDBToolStripMenuItem
+            // 
+            this.exportToCouchDBToolStripMenuItem.Name = "exportToCouchDBToolStripMenuItem";
+            this.exportToCouchDBToolStripMenuItem.Size = new System.Drawing.Size(206, 22);
+            this.exportToCouchDBToolStripMenuItem.Text = "Export to CouchDB";
+            this.exportToCouchDBToolStripMenuItem.Click += new System.EventHandler(this.exportToCouchDBToolStripMenuItem_Click);
             // 
             // exportToMysqlDatabaseToolStripMenuItem
             // 
             this.exportToMysqlDatabaseToolStripMenuItem.Name = "exportToMysqlDatabaseToolStripMenuItem";
-            this.exportToMysqlDatabaseToolStripMenuItem.Size = new System.Drawing.Size(212, 22);
+            this.exportToMysqlDatabaseToolStripMenuItem.Size = new System.Drawing.Size(206, 22);
             this.exportToMysqlDatabaseToolStripMenuItem.Text = "Export to mysql database";
-            this.exportToMysqlDatabaseToolStripMenuItem.Click += new System.EventHandler(this.exportToMysqlDatabaseToolStripMenuItem_Click);
+            this.exportToMysqlDatabaseToolStripMenuItem.Click += new System.EventHandler(this.exportToMysqlDatabaseToolStripMenuItem_Click_1);
             // 
             // MainForm
             // 
@@ -143,6 +170,9 @@
         private System.Windows.Forms.MenuStrip menuStrip1;
         private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem importFromAnExcelFileToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem importFromTNEUSiteToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem exportToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem exportToCouchDBToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem exportToMysqlDatabaseToolStripMenuItem;
     }
 }

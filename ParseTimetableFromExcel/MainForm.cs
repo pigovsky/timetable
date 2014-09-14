@@ -1,11 +1,4 @@
-﻿/*
- * Програма для розбору екселівських файлів з розкладами ТНЕУ.
- * 2013 (c) Піговський Ю.Р. 
- * Програма поширюється на основі ліцензії GNU.
- * 
- */
-
-using Microsoft.Office.Interop.Excel;
+﻿using Microsoft.Office.Interop.Excel;
 using Microsoft.Office.Interop;
 using MySql.Data.MySqlClient;
 using System;
@@ -21,47 +14,16 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Runtime.InteropServices;
 using System.IO;
+using ParseTimetableFromExcel.DataAccessLayer;
+
+// (c) Yuriy Pigovsky, Yulia Gordiyevych, Nazariy Yuzvin, Yuriy Pidkova
 
 namespace ParseTimetableFromExcel
 {
-    
-    
-
+        
     public partial class MainForm : Form
     {
         List<Lesson> lessons = new List<Lesson>();                
-
-
-        /*
-        private void addLessonToGoogleCalendar()
-        {
-            Event event = new Event()
-            {
-                Summary = "Appointment",
-                Location = "Somewhere",
-                Start = new EventDateTime() {
-                    DateTime = new DateTime("2011-06-03T10:00:00.000:-07:00")
-                    TimeZone = "America/Los_Angeles"
-                },
-                End = new EventDateTime() {
-                    DateTime = new DateTime("2011-06-03T10:25:00.000:-07:00")
-                    TimeZone = "America/Los_Angeles"
-                },
-                Recurrence = new String[] {
-                    "RRULE:FREQ=WEEKLY;UNTIL=20110701T100000-07:00"
-                },
-                Attendees = new List<EventAttendee>()
-                {
-                    new EventAttendee() { Email: "attendeeEmail" },
-                    // ...
-                }
-            };
-
-            Event recurringEvent = service.Events.Insert(event, "primary").Fetch();
-
-            //Console.WriteLine(recurringEvent.Id);
-        }*/
-
 
         public MainForm()
         {
@@ -73,7 +35,7 @@ namespace ParseTimetableFromExcel
         
 
         Workbook wb;
-        string fileNameForImport;
+        string[] fileNamesForImport;
 
 
         private void importFromMsExcel(object sender, EventArgs e)
@@ -83,14 +45,15 @@ namespace ParseTimetableFromExcel
             /*for (int j = 1; j <= valueArray.GetLength(1); j++)
                 dataGridView1.Columns.Add("c" + j, "v" + j);*/
 
-            
-            FileDialog fd = new OpenFileDialog();
+
+            OpenFileDialog fd = new OpenFileDialog();
             fd.FileName = "*.xls";
+            fd.Multiselect = true;
 
             if (fd.ShowDialog() != DialogResult.OK)
                 return;
 
-            fileNameForImport = fd.FileName;
+            fileNamesForImport = fd.FileNames;
             
 
             Thread t = new Thread(new ThreadStart(importFromMsExcelThreadProc));
@@ -107,43 +70,49 @@ namespace ParseTimetableFromExcel
 
         private void importFromMsExcelThreadProc()
         {
-            log = File.CreateText("UnMergeText.log");
+            //log = File.CreateText("UnMergeText.log");
             Microsoft.Office.Interop.Excel.Application app 
                 = new Microsoft.Office.Interop.Excel.Application();
-
-            
-
-            wb = app.Workbooks.Open(fileNameForImport, Type.Missing, Type.Missing, Type.Missing, Type.Missing,
-                Type.Missing, Type.Missing, Type.Missing, Type.Missing,
-                Type.Missing, Type.Missing, Type.Missing, Type.Missing,
-                Type.Missing, Type.Missing);
 
             workbookSheetRawDataGrid.Rows.Clear();
             workbookSheetRawDataGrid.Columns.Clear();
             workbookSheetRawDataGrid.Rows.Clear();
 
-
-            int numSheets = wb.Sheets.Count;
-            _cumSumOfIterationsPerSheet = new long[numSheets];
-
-            progressForm.totalNumberOfIterations = 0;
-            for (int sheetNum = 1; sheetNum <= numSheets; sheetNum++)
+            progressForm.totalNumberOfFiles = fileNamesForImport.Length;
+            progressForm.CurrentNumberOfFilesPass = 0;
+            foreach (var fileNameForImport in fileNamesForImport)
             {
-                Worksheet sheet = (Worksheet)wb.Sheets[sheetNum];
-                excelRange = sheet.UsedRange;
-                progressForm.totalNumberOfIterations +=
-                    excelRange.Rows.Count * excelRange.Columns.Count;
-                _cumSumOfIterationsPerSheet[sheetNum - 1] = 
-                    progressForm.totalNumberOfIterations;
+
+                wb = app.Workbooks.Open(fileNameForImport, Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+                    Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+                    Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+                    Type.Missing, Type.Missing);
+
+                int numSheets = wb.Sheets.Count;
+                _cumSumOfIterationsPerSheet = new long[numSheets];
+
+                progressForm.totalNumberOfIterations = 0;
+                for (int sheetNum = 1; sheetNum <= numSheets; sheetNum++)
+                {
+                    Worksheet sheet = (Worksheet)wb.Sheets[sheetNum];
+                    excelRange = sheet.UsedRange;
+                    progressForm.totalNumberOfIterations +=
+                        excelRange.Rows.Count * excelRange.Columns.Count;
+                    _cumSumOfIterationsPerSheet[sheetNum - 1] =
+                        progressForm.totalNumberOfIterations;
+                }
+
+                ExcelScanIntenal(wb);
+
+                wb.Close(false, fileNamesForImport, null);
+                Marshal.ReleaseComObject(wb);
+
+                progressForm.CurrentNumberOfFilesPass++;
             }
 
-            ExcelScanIntenal(wb);
-
-            wb.Close(false, fileNameForImport, null);
-            Marshal.ReleaseComObject(wb);
 
             app.Quit();
-            log.Close();
+            //log.Close();
 
             progressForm.HideProgressForm(setDatasourceForLessons);
         }
@@ -199,37 +168,36 @@ namespace ParseTimetableFromExcel
                 
             }
         }
-
-        
-
-        StreamWriter log;
-
-        private void processData()
-        {            
+               
+        private void processData(){      
+            
             int groupRowIndex,groupColIndex;
             // Розшукуємо на екселівському листі слово "група"
             // від якого будемо розшукувати всю іншу інформацію.
-            IJ ij = searchText("день", valueArray);
-            if (ij != null)
+
+            TimetableProperties timetableProperties = searchText("ПОНЕДІЛОК", valueArray);
+            if (timetableProperties != null)
             {
-                groupRowIndex = ij.i;
-                groupColIndex = ij.j+1;
+                groupRowIndex = timetableProperties.LessonsStartRow-1;
+                groupColIndex = timetableProperties.LessonsStartCol+1;
             }
             else
             {
-                ij = searchText("група", valueArray);
-                if (ij == null)
+                timetableProperties = searchText("група", valueArray);
+                if (timetableProperties == null)
                     return;
-                groupRowIndex = ij.i + 1;
-                groupColIndex = ij.j;
+                groupRowIndex = timetableProperties.LessonsStartRow + 1;
+                groupColIndex = timetableProperties.LessonsStartCol;
             }
             
 
             int lessonsBeginRowIndex = groupRowIndex + 1;
+            
 
             for (int j = groupColIndex; j <= valueArray.GetLength(1); j++)
             {
                 string groupTitle = "";
+                string dayString = "";
                 object groupTitleObj = valueArray[groupRowIndex, j];
                 if (groupTitleObj == null)
                     continue;
@@ -243,14 +211,16 @@ namespace ParseTimetableFromExcel
                 int day=0; // Week days start from 1 -- Monday                                
                 
                 int i = lessonsBeginRowIndex;
+               
 
                 while (i <= valueArray.GetLength(0) - (numberOfRecordsPerLesson-1))
                 {
                     if (valueArray[i, 1] != null)
                     {
-                        string dayString = valueArray[i, 1].ToString().ToLower().Trim();
+                        dayString = valueArray[i, 1].ToString().ToLower().Trim();
                         if (string.IsNullOrWhiteSpace(dayString) ||
-                            "день".Equals(dayString))
+                            "день".Equals(dayString) ||
+                            groupTitle.Equals(dayString))
                         {
                             i++;
                             continue;
@@ -258,12 +228,15 @@ namespace ParseTimetableFromExcel
                         else
                             day++; // Parse next day of week
                     }
-                                                          
+
+                    var timeObj = getTimeFromRoomRecord(emptyForNull(excelRange[i, 2]));
+
+                    string time = timeObj != null ? timeObj.Item1 : emptyForNull(excelRange[i, 2]);
                     
-                    object time = excelRange[i, 2];                                       
+                                                           
                     
                    
-                    foreach (string week in new string[] {"Odd","Even"})
+                    foreach (int week in new int[] {1,2})
                     {
                         // subjects, teachers and rooms can be in merged cells for 
                         // several groups simultaneously.
@@ -284,25 +257,26 @@ namespace ParseTimetableFromExcel
                             }
 
                             // Розділяємо список аудиторій по пробілах, ігноруючи букви
-                            var rooms = getRoomsArray(room);
+                            var rooms = getRoomsArray(teacher + room);
 
                             // If we have no room for a lesson then 
                             // use '?' character as a room title
                             if (rooms == null || rooms.Length < 1)
                                 rooms = new string[] { "?" };
 
-                            var teachers = extractTeacherList(teacher);
-
-                            for (int k = 0; k < rooms.Length; k++)
+                            var teachers = extractTeacherList(teacher+" "+room);
+                          
+                            for (int k = 0; k < teachers.Count; k++)
                             {
                                 var lesson = new Lesson()
                                 {
                                     day = day,
+                                    faculty = timetableProperties.Faculty,
                                     group = emptyForNull(groupTitle),
-                                    room = rooms[k],
+                                    room = k>=rooms.Length? rooms.Last() : rooms[k],
                                     subject = subject,
-                                    teacher = k>=teachers.Count?"":teachers[k],
-                                    time = emptyForNull(time),
+                                    teacher = teachers[k],
+                                    time = time,
                                     week = week
                                 };
 
@@ -325,6 +299,13 @@ namespace ParseTimetableFromExcel
             for (int i = 1; i <= valueArray.GetLength(0); i++)
                 AddRowToWorkbookSheetRawData(GetRow(valueArray, i));
         }
+        ///end processData
+
+
+        private string removeAllSpaces(string p)
+        {
+            return Regex.Replace(p, @"\s+", "");
+        }
 
         private static string[] getRoomsArray(string text)
         {
@@ -338,9 +319,21 @@ namespace ParseTimetableFromExcel
             return rooms.ToArray<string>();
         }
 
+        private static List<DateTime> getDatesArray(string text)
+        {
+            List<DateTime> dates = new List<DateTime>();
+
+            foreach (Match m in Regex.Matches(text, @"(\d+\.\d+\.\d\d+)"))
+            {
+                dates.Add(DateTime.Parse(m.Value));
+            }
+
+            return dates;
+        }
+
         private static Tuple<string,string> getTimeFromRoomRecord(string room)
-        {           
-            string pat = @"(\d+)\s*[:\.]\s*(\d+)";
+        {
+            string pat = @"(\d+)\s*[:\.]\s*(\d\d)";
 
             // Instantiate the regular expression object.
             Regex r = new Regex(pat, RegexOptions.IgnoreCase);
@@ -348,15 +341,17 @@ namespace ParseTimetableFromExcel
             // Match the regular expression pattern against a text string.
             Match m = r.Match(room);
 
-            if (m.Success)
+            int hour;
+
+            if (m.Success && Int32.TryParse(m.Groups[1].Value, out hour))
                 return new Tuple<string,string>(
-                    m.Groups[1] + ":" + m.Groups[2], // time 
+                    String.Format("{0:d2}", hour) + ":" + m.Groups[2], // time 
                     Regex.Replace(room, pat, ""));   // and the room string without time
 
             return null;
         }
 
-        void tryUnMergeString(string s)
+        /*void tryUnMergeString(string s)
         {
             try
             {
@@ -368,7 +363,7 @@ namespace ParseTimetableFromExcel
             {
                 log.WriteLine(s + " gives exception " + e.Message);
             }
-        }
+        }*/
 
         private static string addSpaceBeforeAllUppercaseLetters(string source)
         {
@@ -393,6 +388,7 @@ namespace ParseTimetableFromExcel
 
         static Tuple<string, string> UnmergeTeacherString(string teacherString)
         {
+            // The method's idea is by Yuriy Pidkova
             string first="", 
                    second="";
 
@@ -401,7 +397,7 @@ namespace ParseTimetableFromExcel
             // пробілами та розділовими знаками
             var teacherStringTokens = Regex.Split(
                 addSpaceBeforeAllUppercaseLetters(teacherString.Replace('"','\'')),
-                @"[\s\.\,]").
+                @"[\s\.\,\d]").
                 Where(s => s != String.Empty).ToArray<string>();            
 
             int tokenIndex = 0;
@@ -411,14 +407,21 @@ namespace ParseTimetableFromExcel
             {
                 token = teacherStringTokens[tokenIndex];
 
+                string lctoken = token.ToLower();
+                if (lctoken.Equals("викл") ||
+                    lctoken.Equals("доц") ||
+                    lctoken.Equals("проф"))
+                    continue;
+
+
                 // Якщо токен починається з малої літери і 
                 // має довжину більшу за одну літеру,
-                // то це викл., доц., проф. чи ст. викл.
+                // то це щось на зразок викл., доц., проф. чи ст. викл.
                 if (Char.IsLower(token[0]) && token.Length > 1)
                 {
                     // Commenting the following statement out we
                     // get rid of "doc.", "wykl." and "prof."
-                    //first += token + ". ";
+                    //first += token + ". ";                    
                 }
                 else
                     break;
@@ -439,7 +442,9 @@ namespace ParseTimetableFromExcel
                     first += Char.ToUpper(token[0])+token.Substring(1)+" ";
                     surnameFound = true;
                 }
-                else
+                // Якщо токен з однієї літери і слідує після прізвища,
+                // то це ініціал, інакше -- катзнащо
+                else if (surnameFound && token.Length == 1)
                 {
                     first+=token.ToUpper()+".";
                 }
@@ -463,7 +468,8 @@ namespace ParseTimetableFromExcel
             while (!string.IsNullOrWhiteSpace(currentString))
             {
                 var unmergedTuple = UnmergeTeacherString(currentString);
-                res.Add(unmergedTuple.Item1);
+                if (!String.IsNullOrWhiteSpace(unmergedTuple.Item1))
+                    res.Add(unmergedTuple.Item1);
                 currentString = unmergedTuple.Item2;
             }
 
@@ -598,25 +604,31 @@ namespace ParseTimetableFromExcel
             return array;
         }
 
-        class IJ
+        class TimetableProperties
         {
-            public int i {get;set;}
-            public int j { get; set; }           
+            public int LessonsStartRow {get;set;}
+            public int LessonsStartCol { get; set; }
+            public string Faculty { get; set; }
         }
 
-        private IJ searchText(string text, object[,] valueArray)
+        private TimetableProperties searchText(string txt, object[,] valueArray)
         {
+            string text = txt.ToLower();
             if (valueArray == null)
                 return null;
+            string faculty = "";
             for (var i=0; i<=valueArray.GetLength(0);++i)
                 for(var j=0; j<=valueArray.GetLength(1);++j)
                 {
                     try
                     {
                         string s = valueArray[i, j].ToString().ToLower().Trim();
-                        if (text.Equals(s))
+                        if (s.Contains("факультет") || s.Contains("інститут")
+                            || s.Contains("програм"))
+                            faculty = s;
+                        else if (text.Equals(s))
                         {
-                            return new IJ { i=i, j=j };
+                            return new TimetableProperties { Faculty = faculty, LessonsStartRow=i, LessonsStartCol=j };
                         }
                     }
                     catch (Exception e) 
@@ -630,57 +642,77 @@ namespace ParseTimetableFromExcel
 
         private void exportToMysqlDatabaseToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Thread t = new Thread(new ThreadStart(exportToMysqlDbProc));
+            exportToDbProc(new MySQLAdapter());
+        }
 
+        private void exportToDbProc(IDbAccess db)            
+        {
             progressForm = new ProgressForm()
             {
                 currentNumberOfIterationsPass = 0,
                 totalNumberOfIterations = lessons.Count
             };
+            Thread t = new Thread(() =>
+            {
+                try
+                {
+                    LessonTable.addLessons(db,
+                        lessons, progressForm);
+                    progressForm.HideProgressForm(exportFinished);
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.ToString());
+                }
+            });
+            
             progressForm.Show();
 
             t.Start();            
-        }
-
-        private void exportToMysqlDbProc()
-        {
-            try
-            {
-                LessonTable.setUp();
-                LessonTable.addLessons(lessons, progressForm);
-                progressForm.HideProgressForm(exportFinished);
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.ToString());
-            }
         }
 
         private void exportFinished()
         {
             MessageBox.Show(this, "Export is finished successfully");
         }
+
+        private void importFromTNEUSiteToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            LoadTimetableFromTNEU ltft = new LoadTimetableFromTNEU();
+            ltft.ShowDialog();
+        }
+
+        private void exportToCouchDBToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            exportToDbProc(new CouchDBAdapter());
+        }
+
+        private void exportToMysqlDatabaseToolStripMenuItem_Click_1(object sender, EventArgs e)
+        {
+            exportToDbProc(new MySQLAdapter());
+        }
     }
 
     class Lesson
     {
+        public string faculty { get; set; }
         public string group { get; set; }
-        public string week { get; set; } // Week can be odd or even
+        public int week { get; set; } // Week can be odd or even
         public int day { get; set; }
 
-        
+
         public string time
         {
-            get 
+            get
             {
                 return _time;
             }
-            set 
+            set
             {    // У записі про час замінюємо крапку на двокрапку і забираємо всі пробіли          
                 _time =
-                    Regex.Replace(value.Replace('.', ':'),@"\s+","");            
-            } 
-        
+                    Regex.Replace(value.Replace('.', ':'), @"\s+", "");
+            }
+
         }
         public string teacher { get; set; }
 
@@ -692,112 +724,22 @@ namespace ParseTimetableFromExcel
             set;
         }
 
-        private string _time;
+        private string _time;        
     }
 
     static class LessonTable
-    {
-        private static MySqlConnection _Connection = null;
-        private const string Connect =
-            "Data Source=localhost;User Id=root;Password=;charset=cp1251";
-
-        private const string database = "timetable";
-        private const string table = "timetable";
-
-        private static MySqlConnection Connection
+    {               
+        public static void addLessons(IDbAccess db, List<Lesson> lessons, ProgressForm pf)
         {
-            get
-            {
-                if (_Connection == null)
-                    _Connection = new MySqlConnection(Connect);
-                return _Connection;
-            }
-        }
-
-        public static void setUp()
-        {
-            Connection.Close();
-            Connection.Open();
-            MySqlCommand c;
-            try
-            {
-                Connection.ChangeDatabase(database);
-            }
-            catch (MySqlException e) 
-            {
-                CentralExceptionProcessor.process(e);
-                c = new MySqlCommand("create database " + database, Connection);
-                c.ExecuteNonQuery();
-                Connection.ChangeDatabase(database);
-            }
-            //c = new MySqlCommand("DELETE FROM " + table, Connection);
-            c = new MySqlCommand("DROP TABLE IF EXISTS " + table,Connection);
-            c.ExecuteNonQuery();
-            c = new MySqlCommand("CREATE TABLE  " + table +
-                " (id int(10) unsigned NOT NULL AUTO_INCREMENT," +
-                "st_group varchar(45) NOT NULL," +
-                "week varchar(45) NOT NULL," +
-                "day int(1) NOT NULL," +
-                "lesson_time time NOT NULL," +
-                "teacher varchar(45)," +
-                
-                "subject varchar(45)," +
-                
-                "room varchar(45)," +
-                
-                "PRIMARY KEY (id))"+
-            " default charset=cp1251", Connection);
-            c.ExecuteNonQuery();
-            Connection.Close();
-        }
-
-        public static void addLessons(List<Lesson> lessons, ProgressForm pf)
-        {
-            Connection.Open();
+            db.SetUp();
+            db.Open();
             foreach (var l in lessons)
             {
-                addLesson(l);
+                db.AddLesson(l);
                 pf.currentNumberOfIterationsPass++;
             }
-            Connection.Close();
-            
-        }
-
-        public static void addLesson(Lesson lesson)
-        {                       
-            var c = new MySqlCommand("insert into " + table +
-                " (st_group," +
-                "week," +
-                "day," +
-                "lesson_time," +
-                "teacher," +
-                
-                "subject," +
-                                
-                "room)" +
-                " values (@group," +
-                "@week," +
-                "@day," +
-                "@time," +
-                "@teacher," +
-                
-                "@subject," +
-                
-                
-                "@room)", Connection);
-            c.Parameters.AddWithValue("@group", lesson.group);
-            c.Parameters.AddWithValue("@week", lesson.week);
-            c.Parameters.AddWithValue("@day",  lesson.day);
-            c.Parameters.AddWithValue("@time",  lesson.time);
-            c.Parameters.AddWithValue("@teacher", lesson.teacher);
-            
-            c.Parameters.AddWithValue("@subject", lesson.subject);
-            
-            c.Parameters.AddWithValue("@room", lesson.room);
-            
-            
-            c.ExecuteNonQuery();             
-        }
+            db.Close();
+        }        
     }
 
 }
