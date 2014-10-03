@@ -54,13 +54,18 @@ namespace ParseTimetableFromExcel
                 return;
 
             fileNamesForImport = fd.FileNames;
-            
 
+
+            startImport();
+        }
+
+        private void startImport()
+        {
             Thread t = new Thread(new ThreadStart(importFromMsExcelThreadProc));
-            
+
             progressForm = new ProgressForm();
-            progressForm.Show();          
-            
+            progressForm.Show();
+
             t.Start();
         }
 
@@ -69,9 +74,9 @@ namespace ParseTimetableFromExcel
         private long[] _cumSumOfIterationsPerSheet;
 
         private void importFromMsExcelThreadProc()
-        {
+        {            
             //log = File.CreateText("UnMergeText.log");
-            Microsoft.Office.Interop.Excel.Application app 
+            Microsoft.Office.Interop.Excel.Application app
                 = new Microsoft.Office.Interop.Excel.Application();
 
             workbookSheetRawDataGrid.Rows.Clear();
@@ -82,32 +87,38 @@ namespace ParseTimetableFromExcel
             progressForm.CurrentNumberOfFilesPass = 0;
             foreach (var fileNameForImport in fileNamesForImport)
             {
+                Faculty = new FileInfo(fileNameForImport).Directory.Name;
+                try{
+                    wb = app.Workbooks.Open(fileNameForImport, Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+                        Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+                        Type.Missing, Type.Missing, Type.Missing, Type.Missing,
+                        Type.Missing, Type.Missing);
 
-                wb = app.Workbooks.Open(fileNameForImport, Type.Missing, Type.Missing, Type.Missing, Type.Missing,
-                    Type.Missing, Type.Missing, Type.Missing, Type.Missing,
-                    Type.Missing, Type.Missing, Type.Missing, Type.Missing,
-                    Type.Missing, Type.Missing);
+                    int numSheets = wb.Sheets.Count;
+                    _cumSumOfIterationsPerSheet = new long[numSheets];
 
-                int numSheets = wb.Sheets.Count;
-                _cumSumOfIterationsPerSheet = new long[numSheets];
+                    progressForm.totalNumberOfIterations = 0;
+                    for (int sheetNum = 1; sheetNum <= numSheets; sheetNum++)
+                    {
+                        Worksheet sheet = (Worksheet)wb.Sheets[sheetNum];
+                        excelRange = sheet.UsedRange;
+                        progressForm.totalNumberOfIterations +=
+                            excelRange.Rows.Count * excelRange.Columns.Count;
+                        _cumSumOfIterationsPerSheet[sheetNum - 1] =
+                            progressForm.totalNumberOfIterations;
+                    }
 
-                progressForm.totalNumberOfIterations = 0;
-                for (int sheetNum = 1; sheetNum <= numSheets; sheetNum++)
-                {
-                    Worksheet sheet = (Worksheet)wb.Sheets[sheetNum];
-                    excelRange = sheet.UsedRange;
-                    progressForm.totalNumberOfIterations +=
-                        excelRange.Rows.Count * excelRange.Columns.Count;
-                    _cumSumOfIterationsPerSheet[sheetNum - 1] =
-                        progressForm.totalNumberOfIterations;
+                    ExcelScanIntenal(wb);
+
+                    wb.Close(false, fileNamesForImport, null);
+                    Marshal.ReleaseComObject(wb);
+
+                    progressForm.CurrentNumberOfFilesPass++;
                 }
-
-                ExcelScanIntenal(wb);
-
-                wb.Close(false, fileNamesForImport, null);
-                Marshal.ReleaseComObject(wb);
-
-                progressForm.CurrentNumberOfFilesPass++;
+                catch (Exception e)
+                {
+                    CentralExceptionProcessor.process(e);
+                }
             }
 
 
@@ -115,6 +126,7 @@ namespace ParseTimetableFromExcel
             //log.Close();
 
             progressForm.HideProgressForm(setDatasourceForLessons);
+            
         }
 
         private void setDatasourceForLessons()
@@ -270,15 +282,15 @@ namespace ParseTimetableFromExcel
                             {
                                 var lesson = new Lesson()
                                 {
-                                    day = day,
-                                    faculty = timetableProperties.Faculty,
-                                    group = emptyForNull(groupTitle),
-                                    room = k>=rooms.Length? rooms.Last() : rooms[k],
-                                    subject = subject,
-                                    teacher = teachers[k],
+                                    day = day,                                                                        
+                                    room = k>=rooms.Length? rooms.Last() : rooms[k],                                                                        
                                     time = time,
                                     week = week
                                 };
+                                lesson.faculty.Value = Faculty;
+                                lesson.group.Value = emptyForNull(groupTitle);
+                                lesson.subject.Value = subject;
+                                lesson.teacher.Value = teachers[k];
 
                                 lessons.Add(lesson);
                             }
@@ -590,7 +602,7 @@ namespace ParseTimetableFromExcel
         {
             var columns = matrix.GetLength(1);
             var array = new T[columns];
-            for (int i = 0; i <= columns; ++i)
+            for (int i = 1; i <= columns; ++i)
             {
                 try
                 {
@@ -607,8 +619,7 @@ namespace ParseTimetableFromExcel
         class TimetableProperties
         {
             public int LessonsStartRow {get;set;}
-            public int LessonsStartCol { get; set; }
-            public string Faculty { get; set; }
+            public int LessonsStartCol { get; set; }            
         }
 
         private TimetableProperties searchText(string txt, object[,] valueArray)
@@ -628,7 +639,7 @@ namespace ParseTimetableFromExcel
                             faculty = s;
                         else if (text.Equals(s))
                         {
-                            return new TimetableProperties { Faculty = faculty, LessonsStartRow=i, LessonsStartCol=j };
+                            return new TimetableProperties { LessonsStartRow=i, LessonsStartCol=j };
                         }
                     }
                     catch (Exception e) 
@@ -691,12 +702,107 @@ namespace ParseTimetableFromExcel
         {
             exportToDbProc(new MySQLAdapter());
         }
+
+        private void importFromDirectoryToolStripMenuItem_Click(object sender, EventArgs e)
+        {            
+            using (OpenFileDialog dialog = new OpenFileDialog())
+            {
+                dialog.Title = "Open a folder which contains the xls output";                
+                dialog.InitialDirectory = ".";
+                
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    string folder = new FileInfo(dialog.FileName).DirectoryName;
+
+                    fileNamesForImport = Directory.GetFiles(folder, "*.xls", SearchOption.AllDirectories);
+                    startImport();                    
+                }
+            }
+        }
+
+        public string Faculty { get; set; }
+    }
+
+    public class StringSet
+    {
+        private static IDictionary<String, IList<String>> values = new Dictionary<String, IList<String>>();
+        private int id;
+        private string table;
+
+        public static void ExportToSQL(MySqlConnection connection)
+        {
+            foreach (string table in values.Keys)
+                exportTableToSQL(connection, table);
+
+        }
+
+        private static void exportTableToSQL(MySqlConnection connection, string table)
+        {
+            MySqlCommand c = new MySqlCommand("DROP TABLE IF EXISTS " + table, connection);
+            c.ExecuteNonQuery();
+            c = new MySqlCommand("CREATE TABLE  " + table +
+                " (id int(10) unsigned NOT NULL," +
+                "value varchar(256) NOT NULL," +
+                "PRIMARY KEY (id))" +
+            " DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci", connection);
+            c.ExecuteNonQuery();
+            int id = 0;
+            foreach (var item in values[table])
+            {
+                c = new MySqlCommand("insert into " + table +
+                " (id, value) values (@id, @value)", connection);
+                c.Parameters.AddWithValue("@id", id);
+                c.Parameters.AddWithValue("@value", item);
+                c.ExecuteNonQuery();
+                id++;
+            }
+        }
+
+        public String Value
+        {
+            get
+            {                
+                return values[table][id];
+            }
+            set
+            {
+                if (!values.ContainsKey(table))
+                {
+                    values.Add(table, new List<String>());
+                }
+                id = values[table].IndexOf(value);
+                if (id < 0)
+                {
+                    values[table].Add(value);
+                    id = values[table].Count - 1;
+                }
+            }
+        }
+
+        public int Id
+        {
+            get
+            {
+                return id;
+            }
+        }
+
+        public static implicit operator String(StringSet value)
+        {
+            return value.Value;
+        }        
+
+        public StringSet(String table)
+        {
+            this.table = table;
+        }
     }
 
     class Lesson
     {
-        public string faculty { get; set; }
-        public string group { get; set; }
+        public StringSet faculty = new StringSet("faculty");
+        public StringSet group = new StringSet("st_group");
+        
         public int week { get; set; } // Week can be odd or even
         public int day { get; set; }
 
@@ -714,9 +820,9 @@ namespace ParseTimetableFromExcel
             }
 
         }
-        public string teacher { get; set; }
+        public StringSet teacher = new StringSet("teacher");
 
-        public string subject { get; set; }
+        public StringSet subject = new StringSet("subject");        
 
         public string room
         {

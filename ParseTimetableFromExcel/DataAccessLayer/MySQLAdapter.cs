@@ -51,14 +51,15 @@ namespace ParseTimetableFromExcel.DataAccessLayer
                 "week varchar(45) NOT NULL," +
                 "day varchar(45) NOT NULL," +
                 "lesson_time time NOT NULL," +
-                "teacher varchar(45)," +
-                 "subject varchar(45)," +
+                "teacher int(10)," +
+                 "subject int(10)," +
                   "room varchar(45)," +
-                "st_group varchar(45) NOT NULL," +
-                "faculty varchar(45) NOT NULL, " +
+                "st_group int(10) NOT NULL," +
+                "faculty int(10) NOT NULL, " +
                 "PRIMARY KEY (id))"+
             " DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci", Connection);
             c.ExecuteNonQuery();
+            StringSet.ExportToSQL(Connection);
             Close();
         }
 
@@ -87,19 +88,14 @@ namespace ParseTimetableFromExcel.DataAccessLayer
             c.Parameters.AddWithValue("@week", lesson.week);
             c.Parameters.AddWithValue("@day", lesson.day);
             c.Parameters.AddWithValue("@time", lesson.time);
-            c.Parameters.AddWithValue("@teacher", Win1251ToUTF8(lesson.teacher));
-            c.Parameters.AddWithValue("@subject", Win1251ToUTF8(lesson.subject));
+            c.Parameters.AddWithValue("@teacher", lesson.teacher.Id);
+            c.Parameters.AddWithValue("@subject", lesson.subject.Id);
             c.Parameters.AddWithValue("@room", lesson.room);
-            c.Parameters.AddWithValue("@group", Win1251ToUTF8(lesson.group));
-            c.Parameters.AddWithValue("@faculty", Win1251ToUTF8(lesson.faculty));             
+            c.Parameters.AddWithValue("@group", lesson.group.Id);
+            c.Parameters.AddWithValue("@faculty", lesson.faculty.Id);             
 
             c.ExecuteNonQuery();
-        }
-
-        private string Win1251ToUTF8(string source)
-        {
-            return source;                      
-        }
+        }        
 
         public void Open()
         {

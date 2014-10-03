@@ -38,6 +38,7 @@
             this.exportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exportToCouchDBToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exportToMysqlDatabaseToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.importFromDirectoryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.workbookSheetRawDataGrid)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer)).BeginInit();
@@ -95,6 +96,7 @@
             // fileToolStripMenuItem
             // 
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.importFromDirectoryToolStripMenuItem,
             this.importFromAnExcelFileToolStripMenuItem,
             this.importFromTNEUSiteToolStripMenuItem,
             this.exportToolStripMenuItem});
@@ -139,6 +141,13 @@
             this.exportToMysqlDatabaseToolStripMenuItem.Text = "Export to mysql database";
             this.exportToMysqlDatabaseToolStripMenuItem.Click += new System.EventHandler(this.exportToMysqlDatabaseToolStripMenuItem_Click_1);
             // 
+            // importFromDirectoryToolStripMenuItem
+            // 
+            this.importFromDirectoryToolStripMenuItem.Name = "importFromDirectoryToolStripMenuItem";
+            this.importFromDirectoryToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
+            this.importFromDirectoryToolStripMenuItem.Text = "Import from directory...";
+            this.importFromDirectoryToolStripMenuItem.Click += new System.EventHandler(this.importFromDirectoryToolStripMenuItem_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -174,6 +183,7 @@
         private System.Windows.Forms.ToolStripMenuItem exportToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem exportToCouchDBToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem exportToMysqlDatabaseToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem importFromDirectoryToolStripMenuItem;
     }
 }
 
