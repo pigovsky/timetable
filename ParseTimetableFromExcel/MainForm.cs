@@ -209,6 +209,7 @@ namespace ParseTimetableFromExcel
             for (int j = groupColIndex; j <= valueArray.GetLength(1); j++)
             {
                 string groupTitle = "";
+                string previousDayString = "";
                 string dayString = "";
                 object groupTitleObj = valueArray[groupRowIndex, j];
                 if (groupTitleObj == null)
@@ -227,17 +228,17 @@ namespace ParseTimetableFromExcel
 
                 while (i <= valueArray.GetLength(0) - (numberOfRecordsPerLesson-1))
                 {
-                    if (valueArray[i, 1] != null)
-                    {
-                        dayString = valueArray[i, 1].ToString().ToLower().Trim();
-                        if (string.IsNullOrWhiteSpace(dayString) ||
+                    previousDayString = dayString;
+                    dayString = GetValueFromMergedCell(i, 1).ToLower().Trim();
+                    if (string.IsNullOrWhiteSpace(dayString) ||
                             "день".Equals(dayString) ||
-                            groupTitle.Equals(dayString))
-                        {
-                            i++;
-                            continue;
-                        }
-                        else
+                            groupTitle.ToLower().Trim().Equals(dayString))
+                    {
+                        i++;
+                        continue;
+                    }
+                    else if (dayString != null && !dayString.Equals(previousDayString))
+                    {                                                                                          
                             day++; // Parse next day of week
                     }
 
