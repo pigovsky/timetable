@@ -184,6 +184,10 @@ namespace ParseTimetableFromExcel
         private void processData(){      
             
             int groupRowIndex,groupColIndex;
+
+            // Step to next record in timetable:
+            int rowStep = 1; 
+
             // Розшукуємо на екселівському листі слово "група"
             // від якого будемо розшукувати всю іншу інформацію.
 
@@ -229,7 +233,7 @@ namespace ParseTimetableFromExcel
                 while (i <= valueArray.GetLength(0) - (numberOfRecordsPerLesson-1))
                 {
                     previousDayString = dayString;
-                    dayString = GetValueFromMergedCell(i, 1).ToLower().Trim();
+                    dayString = GetValueFromMergedCell(i, 1, out rowStep).ToLower().Trim();
                     if (string.IsNullOrWhiteSpace(dayString) ||
                             "день".Equals(dayString) ||
                             groupTitle.ToLower().Trim().Equals(dayString))
@@ -242,7 +246,7 @@ namespace ParseTimetableFromExcel
                             day++; // Parse next day of week
                     }
 
-                    var timeObj = getTimeFromRoomRecord(emptyForNull(excelRange[i, 2]));
+                    var timeObj = getTimeFromRoomRecord("", emptyForNull(excelRange[i, 2]));
 
                     string time = timeObj != null ? timeObj.Item1 : emptyForNull(excelRange[i, 2]);
                     
@@ -253,31 +257,34 @@ namespace ParseTimetableFromExcel
                     {
                         // subjects, teachers and rooms can be in merged cells for 
                         // several groups simultaneously.
-                        
-                        string subject = Regex.Replace(
-                                GetValueFromMergedCell(i++, j).ToLower(), 
-                                @"\s+", "");
-                        string teacher = GetValueFromMergedCell(i++, j);
-                        string room    = GetValueFromMergedCell(i++, j);
+
+                        string subject = GetValueFromMergedCell(i, j, out rowStep);
+                        i += rowStep;
+                        string teacher = GetValueFromMergedCell(i, j, out rowStep);
+                        i += rowStep;
+                        string room    = GetValueFromMergedCell(i, j, out rowStep);
+                        i += rowStep;
 
                         if (!string.IsNullOrWhiteSpace(subject))
                         {
-                            var timeRoomTuple = getTimeFromRoomRecord(room);
+                            var timeRoomTuple = getTimeFromRoomRecord(subject, room);
                             if (timeRoomTuple != null)
                             {
                                 time = timeRoomTuple.Item1;
                                 room = timeRoomTuple.Item2;
                             }
 
+                            var teacherWithRoom = teacher + " " + room;
+
                             // Розділяємо список аудиторій по пробілах, ігноруючи букви
-                            var rooms = getRoomsArray(teacher + room);
+                            var rooms = getRoomsArray(teacherWithRoom);
 
                             // If we have no room for a lesson then 
                             // use '?' character as a room title
                             if (rooms == null || rooms.Length < 1)
                                 rooms = new string[] { "?" };
 
-                            var teachers = extractTeacherList(teacher+" "+room);
+                            var teachers = extractTeacherList(teacherWithRoom);
                           
                             for (int k = 0; k < teachers.Count; k++)
                             {
@@ -290,8 +297,14 @@ namespace ParseTimetableFromExcel
                                 };
                                 lesson.faculty.Value = Faculty;
                                 lesson.group.Value = emptyForNull(groupTitle);
-                                lesson.subject.Value = subject;
+                                lesson.subject.Value = Regex.Replace(
+                                    subject.ToLower(), @"[\s\d\.,/]+", "");
                                 lesson.teacher.Value = teachers[k];
+
+                                if (lesson.teacher.Value.IndexOf("МІЖНАРОДН И.Й.")>=0)
+                                {
+                                    int dd= 3;
+                                }
 
                                 lessons.Add(lesson);
                             }
@@ -344,15 +357,15 @@ namespace ParseTimetableFromExcel
             return dates;
         }
 
-        private static Tuple<string,string> getTimeFromRoomRecord(string room)
+        private static Tuple<string,string> getTimeFromRoomRecord(string subject, string room)
         {
-            string pat = @"(\d+)\s*[:\.]\s*(\d\d)";
+            string pat = @"(\d+)\s*[:\./,]\s*(\d\d)";
 
             // Instantiate the regular expression object.
             Regex r = new Regex(pat, RegexOptions.IgnoreCase);
 
             // Match the regular expression pattern against a text string.
-            Match m = r.Match(room);
+            Match m = r.Match(subject +" "+ room);
 
             int hour;
 
@@ -408,8 +421,11 @@ namespace ParseTimetableFromExcel
             // Замінити в стрічці лапки на апострофи та 
             // розбити її на масив непорожніх стрічок за
             // пробілами та розділовими знаками
+            var teachersWithoutRooms = teacherString.Replace('"','\'');
+            teachersWithoutRooms = Regex.Replace(teachersWithoutRooms, @"((?i)[aа]|(?i)(ауд))?[\.,]?\s*\d+", "");
+
             var teacherStringTokens = Regex.Split(
-                addSpaceBeforeAllUppercaseLetters(teacherString.Replace('"','\'')),
+                addSpaceBeforeAllUppercaseLetters(teachersWithoutRooms),
                 @"[\s\.\,\d]").
                 Where(s => s != String.Empty).ToArray<string>();            
 
@@ -583,8 +599,9 @@ namespace ParseTimetableFromExcel
             return o.ToString().Trim();
         }
 
-        private string GetValueFromMergedCell(int i, int j)
+        private string GetValueFromMergedCell(int i, int j, out int delta)
         {
+            delta = 1;
             object val = valueArray[i, j];
             if (val == null)
             {
@@ -593,6 +610,7 @@ namespace ParseTimetableFromExcel
                     return "";
                 var mergeArea = range.MergeArea;
                 val = ((Range)excelRange[mergeArea.Row, mergeArea.Column]).Text;
+                delta = mergeArea.Rows.Count;
                 valueArray[i, j] = val;
             }
             
@@ -797,12 +815,25 @@ namespace ParseTimetableFromExcel
         {
             this.table = table;
         }
+
+        public override string ToString()
+        {
+            return Value;
+        }
     }
 
     class Lesson
     {
-        public StringSet faculty = new StringSet("faculty");
-        public StringSet group = new StringSet("st_group");
+        public Lesson()
+        {
+            faculty = new StringSet("faculty");
+            group = new StringSet("st_group");
+            teacher = new StringSet("teacher");
+            subject = new StringSet("subject");
+        }
+
+        public StringSet faculty { get; set; }
+        public StringSet group { get; set; }
         
         public int week { get; set; } // Week can be odd or even
         public int day { get; set; }
@@ -821,9 +852,9 @@ namespace ParseTimetableFromExcel
             }
 
         }
-        public StringSet teacher = new StringSet("teacher");
+        public StringSet teacher { get; set; }
 
-        public StringSet subject = new StringSet("subject");        
+        public StringSet subject { get; set; }        
 
         public string room
         {
