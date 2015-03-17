@@ -6,6 +6,6 @@ namespace ParseTimetableFromExcel.DataAccessLayer
         void AddLesson(Lesson lesson);
         void Close();
         void Open();
-        void SetUp();
+        void SetUp(bool drop);
     }
 }

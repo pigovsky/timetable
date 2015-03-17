@@ -33,12 +33,13 @@
             this.splitContainer = new System.Windows.Forms.SplitContainer();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.importFromDirectoryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.importFromAnExcelFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.importFromTNEUSiteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exportToCouchDBToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exportToMysqlDatabaseToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.importFromDirectoryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.importFromSQLToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.workbookSheetRawDataGrid)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer)).BeginInit();
@@ -99,10 +100,18 @@
             this.importFromDirectoryToolStripMenuItem,
             this.importFromAnExcelFileToolStripMenuItem,
             this.importFromTNEUSiteToolStripMenuItem,
-            this.exportToolStripMenuItem});
+            this.exportToolStripMenuItem,
+            this.importFromSQLToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
             this.fileToolStripMenuItem.Text = "File";
+            // 
+            // importFromDirectoryToolStripMenuItem
+            // 
+            this.importFromDirectoryToolStripMenuItem.Name = "importFromDirectoryToolStripMenuItem";
+            this.importFromDirectoryToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
+            this.importFromDirectoryToolStripMenuItem.Text = "Import from directory...";
+            this.importFromDirectoryToolStripMenuItem.Click += new System.EventHandler(this.importFromDirectoryToolStripMenuItem_Click);
             // 
             // importFromAnExcelFileToolStripMenuItem
             // 
@@ -141,12 +150,12 @@
             this.exportToMysqlDatabaseToolStripMenuItem.Text = "Export to mysql database";
             this.exportToMysqlDatabaseToolStripMenuItem.Click += new System.EventHandler(this.exportToMysqlDatabaseToolStripMenuItem_Click_1);
             // 
-            // importFromDirectoryToolStripMenuItem
+            // importFromSQLToolStripMenuItem
             // 
-            this.importFromDirectoryToolStripMenuItem.Name = "importFromDirectoryToolStripMenuItem";
-            this.importFromDirectoryToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
-            this.importFromDirectoryToolStripMenuItem.Text = "Import from directory...";
-            this.importFromDirectoryToolStripMenuItem.Click += new System.EventHandler(this.importFromDirectoryToolStripMenuItem_Click);
+            this.importFromSQLToolStripMenuItem.Name = "importFromSQLToolStripMenuItem";
+            this.importFromSQLToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
+            this.importFromSQLToolStripMenuItem.Text = "Import from SQL";
+            this.importFromSQLToolStripMenuItem.Click += new System.EventHandler(this.importFromSQLToolStripMenuItem_Click);
             // 
             // MainForm
             // 
@@ -184,6 +193,7 @@
         private System.Windows.Forms.ToolStripMenuItem exportToCouchDBToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem exportToMysqlDatabaseToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem importFromDirectoryToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem importFromSQLToolStripMenuItem;
     }
 }
 

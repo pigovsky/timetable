@@ -54,7 +54,7 @@ namespace ParseTimetableFromExcel.DataAccessLayer
             // CouchDB is stateless so it does not need an open operation
         }
 
-        public void SetUp()
+        public void SetUp(bool drop)
         {
             // CouchDB is schema-free so it does not require database
             // create statements 

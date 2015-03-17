@@ -15,6 +15,7 @@ using System.Threading;
 using System.Runtime.InteropServices;
 using System.IO;
 using ParseTimetableFromExcel.DataAccessLayer;
+using System.Diagnostics;
 
 // (c) Yuriy Pigovsky, Yulia Gordiyevych, Nazariy Yuzvin, Yuriy Pidkova
 
@@ -301,10 +302,9 @@ namespace ParseTimetableFromExcel
                                     subject.ToLower(), @"[\s\d\.,/]+", "");
                                 lesson.teacher.Value = teachers[k];
 
-                                if (lesson.teacher.Value.IndexOf("МІЖНАРОДН И.Й.")>=0)
-                                {
-                                    int dd= 3;
-                                }
+                                if (lesson.teacher.Value.Count(c => c == '.') > 2)
+                                    Debug.Assert(true);
+                                    
 
                                 lessons.Add(lesson);
                             }
@@ -740,6 +740,11 @@ namespace ParseTimetableFromExcel
         }
 
         public string Faculty { get; set; }
+
+        private void importFromSQLToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            new MySQLAdapter().Import();
+        }
     }
 
     public class StringSet
@@ -753,6 +758,29 @@ namespace ParseTimetableFromExcel
             foreach (string table in values.Keys)
                 exportTableToSQL(connection, table);
 
+        }
+
+        public static void ImportFromSQL(MySqlConnection connection)
+        {
+            foreach(var table in new String[]{"faculty", "st_group", "teacher", "subject"})
+            {
+                values.Add(table, ImportTableFromSQL(connection, table));
+            }            
+        }
+
+        private static IList<String> ImportTableFromSQL(MySqlConnection connection, String table)
+        {          
+            String[] values = new String[Convert.ToInt32(new MySqlCommand("select COUNT(*) from "+table, 
+                connection).ExecuteScalar())];
+            MySqlCommand cmd = new MySqlCommand("select id, value from " + table, connection);
+            MySqlDataReader reader = cmd.ExecuteReader();
+            
+            while (reader.Read())
+            {                
+                values[reader.GetInt32("id")] = reader.GetString("value");
+            }
+            reader.Close();
+            return new List<String>(values);
         }
 
         private static void exportTableToSQL(MySqlConnection connection, string table)
@@ -869,7 +897,7 @@ namespace ParseTimetableFromExcel
     {               
         public static void addLessons(IDbAccess db, List<Lesson> lessons, ProgressForm pf)
         {
-            db.SetUp();
+            db.SetUp(false);
             db.Open();
             foreach (var l in lessons)
             {

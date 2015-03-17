@@ -26,11 +26,45 @@ namespace ParseTimetableFromExcel.DataAccessLayer
             }
         }
 
-        public void SetUp()
+        public void Import()
+        {
+            OpenDB();
+            StringSet.ImportFromSQL(Connection);
+        }
+
+        public void SetUp(bool drop)
+        {
+            OpenDB();
+            MySqlCommand c;
+            //c = new MySqlCommand("DELETE FROM " + table, Connection);
+            if (drop)
+            {
+                c = new MySqlCommand("DROP TABLE IF EXISTS " + table, Connection);
+                c.ExecuteNonQuery();
+
+                c = new MySqlCommand("CREATE TABLE  " + table +
+                    " (id int(10) unsigned NOT NULL AUTO_INCREMENT," +
+                    "week varchar(45) NOT NULL," +
+                    "day varchar(45) NOT NULL," +
+                    "lesson_time time NOT NULL," +
+                    "teacher int(10)," +
+                     "subject int(10)," +
+                      "room varchar(45)," +
+                    "st_group int(10) NOT NULL," +
+                    "faculty int(10) NOT NULL, " +
+                    "PRIMARY KEY (id))" +
+                " DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci", Connection);
+                c.ExecuteNonQuery();
+            }            
+            StringSet.ExportToSQL(Connection);
+            Close();
+        }
+
+        private void OpenDB()
         {
             Close();
             Open();
-            MySqlCommand c;
+
             try
             {
                 Connection.ChangeDatabase(database);
@@ -38,29 +72,11 @@ namespace ParseTimetableFromExcel.DataAccessLayer
             catch (MySqlException e)
             {
                 CentralExceptionProcessor.process(e);
-                c = new MySqlCommand("create database " + database +
+                MySqlCommand c = new MySqlCommand("create database " + database +
                 " CHARACTER SET utf8 COLLATE utf8_general_ci;", Connection);
                 c.ExecuteNonQuery();
                 Connection.ChangeDatabase(database);
             }
-            //c = new MySqlCommand("DELETE FROM " + table, Connection);
-            c = new MySqlCommand("DROP TABLE IF EXISTS " + table, Connection);
-            c.ExecuteNonQuery();
-            c = new MySqlCommand("CREATE TABLE  " + table +
-                " (id int(10) unsigned NOT NULL AUTO_INCREMENT," +
-                "week varchar(45) NOT NULL," +
-                "day varchar(45) NOT NULL," +
-                "lesson_time time NOT NULL," +
-                "teacher int(10)," +
-                 "subject int(10)," +
-                  "room varchar(45)," +
-                "st_group int(10) NOT NULL," +
-                "faculty int(10) NOT NULL, " +
-                "PRIMARY KEY (id))"+
-            " DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci", Connection);
-            c.ExecuteNonQuery();
-            StringSet.ExportToSQL(Connection);
-            Close();
         }
 
         public void AddLesson(Lesson lesson)
